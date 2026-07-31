@@ -1,0 +1,22 @@
+# Secrets
+.env
+.env.*
+!templates/env.example
+credentials/
+*.key
+*.pem
+
+# Unsanitized exports. Keep raw n8n exports out of the repo.
+*.local.json
+*.raw.json
+workflows/raw/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Node
+node_modules/
