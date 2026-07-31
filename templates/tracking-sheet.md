@@ -1,36 +1,33 @@
 # Tracking Sheet Schema
 
-Create a Google Sheet with these columns in row 1, in this order. Workflow 3 appends rows. Workflow 4 reads and updates them.
+Create a Google Sheet with these columns in row 1, in this exact order.
 
-| Column | Header | Written by | Notes |
-|---|---|---|---|
-| A | `timestamp` | Workflow 3 | When production started |
-| B | `topic` | Workflow 3 | Original topic from Telegram |
-| C | `title` | Workflow 3 | Final YouTube title |
-| D | `description` | Workflow 3 | Final YouTube description |
-| E | `heygen_video_id` | Workflow 3 | **The match key.** Workflow 4 looks up this column. |
-| F | `status` | Both | `producing`, `rendered`, `uploaded`, `failed` |
-| G | `video_url` | Workflow 4 | HeyGen download URL from the webhook |
-| H | `youtube_url` | Workflow 4 | Final YouTube link |
-| I | `mode` | Workflow 3 | `topic` or `script` |
-| J | `notes` | You | Anything you want to track |
+| Column | Header |
+|---|---|
+| A | `video_id` |
+| B | `title` |
+| C | `description` |
+| D | `status` |
+| E | `video_url` |
+| F | `youtube_url` |
+| G | `created_at` |
 
 ## Why the sheet exists
 
-Claude does not wait for a render. It submits the video, writes a row, and stops.
+Claude does not wait for the video to finish rendering. It submits the production request, writes a row to the sheet, and exits.
 
-Fifteen minutes later HeyGen finishes and fires a webhook with a video ID. That webhook has no idea what the title or description was. The sheet is what connects them.
+Several minutes later, HeyGen finishes rendering and sends a webhook containing the `video_id`. Workflow 4 uses that `video_id` to find the correct row, update the render status, save the download URL, upload the video to YouTube, and finally write the YouTube URL back to the sheet.
 
-Column E is the join. Do not rename it, do not reorder columns without updating both workflows.
+Column A (`video_id`) is the join key. Do not rename it or reorder the columns unless you also update both workflows.
 
 ## Setup
 
-1. New Google Sheet, name it whatever
-2. Paste the headers into row 1
-3. Freeze row 1
-4. Copy the spreadsheet ID from the URL, the long string between `/d/` and `/edit`
-5. Put that ID in Workflow 3 and Workflow 4
+1. Create a new Google Sheet.
+2. Add the headers above to row 1 in the exact order shown.
+3. Freeze row 1.
+4. Copy the spreadsheet ID from the URL (the long string between `/d/` and `/edit`).
+5. Paste that spreadsheet ID into both Workflow 3 and Workflow 4.
 
 ## Optional
 
-Add a conditional format on column F so failed rows turn red. Makes it obvious at a glance when something broke.
+Add conditional formatting to the `status` column so rows with `failed` are highlighted in red. This makes failed productions easy to spot.
