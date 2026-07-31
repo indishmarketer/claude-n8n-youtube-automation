@@ -8,6 +8,14 @@ This repo has the four n8n workflows, the Claude skill file, and the setup docs 
 
 ---
 
+## Demo Video
+
+[![Watch the demo](https://img.youtube.com/vi/puM_wcS3jxk/maxresdefault.jpg)](https://www.youtube.com/watch?v=puM_wcS3jxk)
+
+▶️ **Watch on YouTube:** https://www.youtube.com/watch?v=puM_wcS3jxk
+
+---
+
 ## What this actually does
 
 You message a Telegram bot with a video topic. Claude picks it up, researches keywords with vidIQ, writes the script in your voice, and sends it to you for approval. You approve or ask for changes right from your phone. Once approved, Claude sends the script to HeyGen's Video Agent, which renders a full video with your avatar, captions, motion graphics and B-roll. n8n catches the finished video and uploads it to YouTube with the title and description already written.
