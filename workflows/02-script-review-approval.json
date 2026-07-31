@@ -1,0 +1,158 @@
+{
+  "name": "Workflow 3: Log Video Row",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1yHG5TiiaVZ2gHUcdUfgwvOu5_J9vkCVn3HguIdNobNA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yHG5TiiaVZ2gHUcdUfgwvOu5_J9vkCVn3HguIdNobNA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "video_id": "={{ $json.body?.video_id || $json.video_id }}",
+            "title": "={{ $json.body?.title || $json.title }}",
+            "description": "={{ $json.body?.description || $json.description }}",
+            "status": "={{ $json.body?.status || $json.status || 'generating' }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "video_id",
+              "displayName": "video_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "video_url",
+              "displayName": "video_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "youtube_url",
+              "displayName": "youtube_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "68f2bba7-d6a0-4399-b868-7c6c0274e670",
+      "name": "Append Video Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        208,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7tJwEMgog9YlgIXk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "log-video-row",
+        "options": {}
+      },
+      "id": "39bb4d4b-8fd1-4201-b3e2-ef1ce6750fd3",
+      "name": "Log Row Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        16,
+        0
+      ],
+      "webhookId": "ada1611f-644e-4395-91a4-6022fecd472b"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Log Row Webhook": {
+      "main": [
+        [
+          {
+            "node": "Append Video Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "c9e3d726-d1a4-40c9-94b9-2788fadeee02",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33081bb771ef161086c7c46479d86cf3fe146810b09d5a31cda00224754bad76"
+  },
+  "id": "nsv4FO06oaGb8W9E",
+  "tags": []
+}

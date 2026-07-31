@@ -1,0 +1,303 @@
+{
+  "name": "Workflow 1: Idea Intake via Telegram (v2 Conversational)",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "6abd3f55-d35e-43ef-8334-463bb73cb640",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -3216,
+        1088
+      ],
+      "webhookId": "a1b2c3d4-e5f6-4708-9a0b-1c2d3e4f5a6b",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message.chat.id }}",
+              "rightValue": "5180685658",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "1b2c3d4e-5f60-4718-9a2b-3c4d5e6f7a8b"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "looseTypeValidation": true
+        }
+      },
+      "id": "a879a115-5b28-4661-ba92-629b0893adf1",
+      "name": "Is It Me?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -2992,
+        1088
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const msg = $input.first().json.message;\nconst chatId = msg.chat.id;\nconst text = (msg.text || '').trim();\nconst lower = text.toLowerCase();\nconst state = $getWorkflowStaticData('global');\n\nconst out = (action, reply, payload) => [{ json: { action, reply: reply || '', payload: payload || '', chatId } }];\n\n// Non-text messages (photos, stickers, etc.) are not handled here\nif (!text) {\n  return out('reply', '🤖 This bot only takes text. Send \"topic\" to start a new video idea, or \"script\" to submit a ready-made script.');\n}\n\n// Cancel resets everything, at any step\nif (['cancel', 'stop', 'reset'].includes(lower)) {\n  state.pending = null;\n  return out('reply', '❌ Cancelled. Nothing was sent to Claude.\\n\\nSend \"topic\" or \"script\" whenever you are ready.');\n}\n\n// Keyword: start topic flow\nif (['topic', 'idea'].includes(lower)) {\n  state.pending = 'topic';\n  return out('reply', '📝 Send me your topic or idea now.\\n\\nYou can include an angle or CTA in the same message if you have one. Add (no vidiq) at the end for personal or opinion content that should not use keyword research.\\n\\nType \"cancel\" to abort.');\n}\n\n// Keyword: start script flow\nif (lower === 'script') {\n  state.pending = 'script';\n  return out('reply', '📜 Send me your final script now, as ONE message.\\n\\n⚠️ It will be treated as ALREADY APPROVED, no review step. Production starts as soon as you send it.\\n\\nType \"cancel\" to abort.');\n}\n\n// Pending: this message IS the topic\nif (state.pending === 'topic') {\n  state.pending = null;\n  return out(\n    'fire',\n    '✅ Got it! Working on:\\n\\n' + text + '\\n\\nYou will get the script here for review once it is ready.',\n    'MODE: new\\nTOPIC: ' + text\n  );\n}\n\n// Pending: this message IS the approved script, fire straight to production\nif (state.pending === 'script') {\n  state.pending = null;\n  return out(\n    'fire',\n    '🎬 Script received and treated as approved.\\n\\nSending it to HeyGen for video production now. You will get a ping here once it is on YouTube.',\n    'MODE: direct\\nSCRIPT:\\n' + text\n  );\n}\n\n// No pending state and not a keyword, guide the user, never fire accidentally\nreturn out('reply', '🤖 What do you want to do?\\n\\n• Send \"topic\" (or \"idea\") → Claude writes a script and sends it for your approval.\\n• Send \"script\" → you paste a ready-made script, it skips approval and goes straight to video production.\\n• Send \"cancel\" anytime to reset.');"
+      },
+      "id": "bf332c22-d223-421b-9270-987a3bd39568",
+      "name": "Conversation Router",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2768,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "fire",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "c1d2e3f4-0002-4a2b-9c3d-000000000002"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2edbec97-83b6-4f09-acfc-f3c131bf2d00",
+      "name": "Fire Claude?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -2544,
+        1024
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/claude_code/routines/trig_01UDg82TkNEFAcGVPJci3id2/fire",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "anthropic-beta",
+              "value": "experimental-cc-routine-2026-04-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $json.payload }) }}",
+        "options": {}
+      },
+      "id": "be135c80-eda2-4db3-8038-69ce1f9da7cb",
+      "name": "Fire Claude Routine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2320,
+        928
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "0sVrNDe8JNdobggm",
+          "name": "Claude Routine Trigger"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Conversation Router').item.json.chatId }}",
+        "text": "={{ $('Conversation Router').item.json.reply }}",
+        "additionalFields": {}
+      },
+      "id": "0e725e8d-06b8-4fe8-8209-eeedf719c7f2",
+      "name": "Confirm Fired",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2096,
+        928
+      ],
+      "webhookId": "48e11410-5331-4957-bb39-8e9765716836",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.reply }}",
+        "additionalFields": {}
+      },
+      "id": "43392ecc-fd94-4f85-8d98-cc5d33c18b50",
+      "name": "Send Prompt / Help",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2320,
+        1136
+      ],
+      "webhookId": "c1d2e3f4-0005-4a2b-9c3d-000000000005",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "⛔ Error: Unauthorized user. Your request was not sent to Claude.",
+        "additionalFields": {}
+      },
+      "id": "7e698a55-bdeb-48b2-9d13-06171fe89b0f",
+      "name": "Report Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2768,
+        1248
+      ],
+      "webhookId": "5dc739f3-eb0f-40e3-be90-1cc66570444c",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is It Me?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is It Me?": {
+      "main": [
+        [
+          {
+            "node": "Conversation Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Report Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Router": {
+      "main": [
+        [
+          {
+            "node": "Fire Claude?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Claude?": {
+      "main": [
+        [
+          {
+            "node": "Fire Claude Routine",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Prompt / Help",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fire Claude Routine": {
+      "main": [
+        [
+          {
+            "node": "Confirm Fired",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6618d0d0-ce04-4358-9b2e-073e3030725d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33081bb771ef161086c7c46479d86cf3fe146810b09d5a31cda00224754bad76"
+  },
+  "id": "g5xHsJl71DSZ7e7f",
+  "tags": []
+}

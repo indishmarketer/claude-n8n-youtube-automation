@@ -1,0 +1,429 @@
+{
+  "name": "Workflow 2: Script Review & Approval",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "script-approval",
+        "options": {}
+      },
+      "id": "13fc383d-aff9-4e27-af0b-963a74327bf4",
+      "name": "Script Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -2512,
+        1808
+      ],
+      "webhookId": "e856a6e6-3f5b-448c-8531-a29ef0e7df5f"
+    },
+    {
+      "parameters": {
+        "chatId": "5180685658",
+        "text": "={{ ($json.body.mode === 'revise' ? '🔁 <b>REVISED script v' + $json.body.revision + '</b>' : '🎬 <b>New video script</b>') + '\\n\\n<b>' + $json.body.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b>\\n\\n<b>Keywords:</b> ' + ($json.body.keywords_used || []).join(', ') + '\\n\\n📜 <b>Script:</b>\\n\\n' + $json.body.script.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').slice(0, 3600) + ($json.body.script.length > 3600 ? '\\n\\n…(truncated)' : '') + '\\n\\n<a href=\"' + $execution.resumeFormUrl + '\">✅ Approve / Request changes / Abort</a>' }}",
+        "additionalFields": {
+          "disable_web_page_preview": true,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "4b97138f-441d-4a61-8ca3-b4224d752572",
+      "name": "Telegram Notify",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2288,
+        1808
+      ],
+      "webhookId": "be2113d1-9e1d-4c80-a8c6-1ce6932d60ce",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resume": "form",
+        "formTitle": "={{ $('Script Webhook').item.json.body.title }}",
+        "formDescription": "={{ 'Revision: ' + ($('Script Webhook').item.json.body.revision || 0) + '. The full script is in the Telegram message. Approve it, request changes with feedback, or Abort to stop this video entirely (nothing is sent to Claude).' }}",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Decision",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Approve"
+                  },
+                  {
+                    "option": "Request changes"
+                  },
+                  {
+                    "option": "Abort"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Feedback",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "df2c8c5d-a07b-4f92-a5f2-ffc767ffd05e",
+      "name": "Wait For My Decision",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2064,
+        1808
+      ],
+      "webhookId": "cec16383-0365-434f-8091-07901f8ba78e"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Decision }}",
+                    "rightValue": "Approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a1000000-0000-0000-0000-000000000001"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Decision }}",
+                    "rightValue": "Request changes",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a1000000-0000-0000-0000-000000000002"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Revise"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Decision }}",
+                    "rightValue": "Abort",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a1000000-0000-0000-0000-000000000003"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Abort"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cbcd5903-c33a-40c7-b989-b8ae08cc7ef3",
+      "name": "Decision Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1840,
+        1808
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/claude_code/routines/trig_01UDg82TkNEFAcGVPJci3id2/fire",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "anthropic-beta",
+              "value": "experimental-cc-routine-2026-04-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: \"MODE: revise\\nREVISION: \" + (($('Script Webhook').item.json.body.revision || 0) + 1) + \"\\nFEEDBACK: \" + $json.Feedback + \"\\nTITLE: \" + $('Script Webhook').item.json.body.title + \"\\nDESCRIPTION: \" + $('Script Webhook').item.json.body.description + \"\\nKEYWORDS: \" + ($('Script Webhook').item.json.body.keywords_used || []).join(\", \") + \"\\nAVATAR_ID: \" + $('Script Webhook').item.json.body.avatar_id + \"\\nVOICE_ID: \" + $('Script Webhook').item.json.body.voice_id + \"\\nSCRIPT:\\n\" + $('Script Webhook').item.json.body.script }) }}",
+        "options": {}
+      },
+      "id": "637a9e32-71fd-4be3-a96b-5e1ecd78647f",
+      "name": "Wake Claude To Revise",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1616,
+        1808
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "0sVrNDe8JNdobggm",
+          "name": "Claude Routine Trigger"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/claude_code/routines/trig_01UDg82TkNEFAcGVPJci3id2/fire",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "anthropic-beta",
+              "value": "experimental-cc-routine-2026-04-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: \"MODE: produce\\nTITLE: \" + $('Script Webhook').item.json.body.title + \"\\nDESCRIPTION: \" + $('Script Webhook').item.json.body.description + \"\\nSCRIPT:\\n\" + $('Script Webhook').item.json.body.script }) }}",
+        "options": {}
+      },
+      "id": "3672abc8-d633-49f6-9bc4-78a4a84c5a76",
+      "name": "Wake Claude To Produce",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1616,
+        1616
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "0sVrNDe8JNdobggm",
+          "name": "Claude Routine Trigger"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5180685658",
+        "text": "={{ '🎬 Sent to Claude for video production:\\n\\n' + $('Script Webhook').item.json.body.title + '\\n\\nI will ping you here once it is uploaded to YouTube.' }}",
+        "additionalFields": {}
+      },
+      "id": "4203b954-7e3f-4908-9a78-2be14d6a3fc8",
+      "name": "Notify: Sent To Produce",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1392,
+        1616
+      ],
+      "webhookId": "26105d7a-9944-4b9b-9f9c-4a7193f365aa",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5180685658",
+        "text": "={{ '✏️ Revision #' + (($('Script Webhook').item.json.body.revision || 0) + 1) + ' requested for:\\n\\n' + $('Script Webhook').item.json.body.title + '\\n\\nClaude is rewriting the script now — you\\'ll get it back for review shortly.' }}",
+        "additionalFields": {}
+      },
+      "id": "4542c197-0e55-4ed6-9de9-7d7d8c3c1056",
+      "name": "Notify: Sent To Revise",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1392,
+        1808
+      ],
+      "webhookId": "3bf91570-90ee-41f5-b27c-2500a6b75e3d",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5180685658",
+        "text": "={{ '🛑 Aborted:\\n\\n' + $('Script Webhook').item.json.body.title + '\\n\\nNothing was sent to Claude. No script revision, no video, no credits used. This execution is finished.' }}",
+        "additionalFields": {}
+      },
+      "id": "c00b91bf-4d46-40d1-9cf9-219727c19311",
+      "name": "Notify: Aborted",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1616,
+        2000
+      ],
+      "webhookId": "3bf91570-90ee-41f5-b27c-2500a6b75e3e",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Script Webhook": {
+      "main": [
+        [
+          {
+            "node": "Telegram Notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Notify": {
+      "main": [
+        [
+          {
+            "node": "Wait For My Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For My Decision": {
+      "main": [
+        [
+          {
+            "node": "Decision Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decision Router": {
+      "main": [
+        [
+          {
+            "node": "Wake Claude To Produce",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wake Claude To Revise",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify: Aborted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wake Claude To Produce": {
+      "main": [
+        [
+          {
+            "node": "Notify: Sent To Produce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wake Claude To Revise": {
+      "main": [
+        [
+          {
+            "node": "Notify: Sent To Revise",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "fa32e1c2-1c4c-4b62-bd62-91860500c53d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33081bb771ef161086c7c46479d86cf3fe146810b09d5a31cda00224754bad76"
+  },
+  "id": "c3JMcwhx8ksQ6HLG",
+  "tags": []
+}

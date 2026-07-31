@@ -1,0 +1,463 @@
+{
+  "name": "Workflow 4: Download, Fix MIME Type, Upload to YouTube",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "heygen-callback",
+        "options": {}
+      },
+      "id": "9494fe7e-d712-429c-9e25-3e19c7d58c26",
+      "name": "HeyGen Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        112
+      ],
+      "webhookId": "961e6b87-25db-4549-954f-4a8325d92bc7"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.body.event_type }}",
+              "rightValue": "video_agent.success",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "be6f3cda-943e-4895-8905-14a80437734d"
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "6b95045a-9428-4bcf-adcf-381288ea4ece",
+      "name": "Video Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1yHG5TiiaVZ2gHUcdUfgwvOu5_J9vkCVn3HguIdNobNA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yHG5TiiaVZ2gHUcdUfgwvOu5_J9vkCVn3HguIdNobNA/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "video_id",
+              "lookupValue": "={{ $json.body.event_data.video_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2d5998e2-1201-4e5a-974b-cb728a8b46e9",
+      "name": "Find Video Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7tJwEMgog9YlgIXk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('HeyGen Webhook').item.json.body.event_data.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "e6351565-e7ac-4d2b-a9e6-93981a4a51d3",
+      "name": "Download Video File",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Find Video Row').item.json.title }}",
+        "regionCode": "IN",
+        "categoryId": "28",
+        "options": {
+          "description": "={{ $('Find Video Row').item.json.description }}",
+          "privacyStatus": "unlisted"
+        }
+      },
+      "id": "844b553d-d339-4ab5-8909-85191b09992c",
+      "name": "Upload To YouTube",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        656,
+        0
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "VmxjrIg9lQn7ru2M",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1yHG5TiiaVZ2gHUcdUfgwvOu5_J9vkCVn3HguIdNobNA",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1yHG5TiiaVZ2gHUcdUfgwvOu5_J9vkCVn3HguIdNobNA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "video_id": "={{ $('HeyGen Webhook').item.json.body.event_data.video_id }}",
+            "status": "published",
+            "video_url": "={{ $('HeyGen Webhook').item.json.body.event_data.url }}",
+            "youtube_url": "=https://youtu.be/{{ $json.uploadId }}",
+            "row_number": 0,
+            "created_at": "="
+          },
+          "matchingColumns": [
+            "video_id"
+          ],
+          "schema": [
+            {
+              "id": "video_id",
+              "displayName": "video_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "video_url",
+              "displayName": "video_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "youtube_url",
+              "displayName": "youtube_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ed7637df-6648-46c5-8900-49a3e9b3fbc5",
+      "name": "Mark Published",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        0
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7tJwEMgog9YlgIXk",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "shubhojitdey36@gmail.com",
+        "toEmail": "shubhojitdey46@gmail.com",
+        "subject": "=HeyGen video FAILED: {{ $json.body.event_data.video_id }}",
+        "emailFormat": "text",
+        "text": "=HeyGen reported a failure.\n\nVideo ID: {{ $json.body.event_data.video_id }}\nMessage: {{ $json.body.event_data.msg }}",
+        "options": {}
+      },
+      "id": "a637a284-ec5a-49d7-b1c0-73eeb8b49531",
+      "name": "Email Failure Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": "f3c1e08e-29c2-4fd2-b3b3-8684f4132ba1",
+      "credentials": {
+        "smtp": {
+          "id": "j0QVTlWBDVO8A5hN",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const buffer = await this.helpers.getBinaryDataBuffer(i, 'data');\n  const fileName = items[i].binary.data.fileName || 'video.mp4';\n  items[i].binary.data = await this.helpers.prepareBinaryData(buffer, fileName, 'video/mp4');\n}\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "2939c852-fea9-47dd-979c-29d11e5ad7b9",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "chatId": "5180685658",
+        "text": "=HeyGen reported a failure.\n\nVideo ID: {{ $json.body.event_data.video_id }}\nMessage: {{ $json.body.event_data.msg }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        240
+      ],
+      "id": "f75b4693-e9d8-4840-bf93-94ec879ec397",
+      "name": "Send a text message",
+      "webhookId": "d9bcb36a-be19-4bf9-861b-b31daaff9e90",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "5180685658",
+        "text": "=🎬 Your video is ready!\n\nUploaded as Unlisted on YouTube.\n\n{{ $json.youtube_url }}\n\n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        0
+      ],
+      "id": "bccec520-6ab5-416e-8f97-6fe6212e50a4",
+      "name": "Send a text message1",
+      "webhookId": "a325cfcc-3671-49fb-97e7-9fd84d95ccb4",
+      "credentials": {
+        "telegramApi": {
+          "id": "nsuZXl8Og799TUyG",
+          "name": "VideoBot Studio"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HeyGen Webhook": {
+      "main": [
+        [
+          {
+            "node": "Video Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Success?": {
+      "main": [
+        [
+          {
+            "node": "Find Video Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Email Failure Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Video Row": {
+      "main": [
+        [
+          {
+            "node": "Download Video File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Video File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload To YouTube": {
+      "main": [
+        [
+          {
+            "node": "Mark Published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Upload To YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Failure Alert": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Published": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "bcb36f78-6c2f-4dd8-9438-9d8530cfbd4c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "33081bb771ef161086c7c46479d86cf3fe146810b09d5a31cda00224754bad76"
+  },
+  "id": "j6cgoIVt5o0oKs5M",
+  "tags": []
+}
